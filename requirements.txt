@@ -1,2 +1,4 @@
 datetime~=4.4
 pathlib~=1.0.1
+smbus
+pimoroni-bme280

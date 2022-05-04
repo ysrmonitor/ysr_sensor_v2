@@ -8,13 +8,16 @@
 # short term todo
 # todo implement screen stuff
 
-from tests import BME280
+# for testing
+# from tests import BME280
+import dfr0528 as ups
+
+from bme280 import BME280
 import datetime
 import time
 import pathlib
 import subprocess
 import re
-import dfr0528 as ups
 
 DATA_FILE_NAME = 'data.txt'
 DATA_FILEPATH = pathlib.Path(__file__).parent.resolve().joinpath(DATA_FILE_NAME)
@@ -45,6 +48,8 @@ class Controller:
         bus_addrs['bme2'] = '0x77'
         bus_addrs['screen'] = '0x3c'
         bus_addrs['ups'] = '0x10'
+
+        self.check_bus()
 
         return bus_addrs
 
