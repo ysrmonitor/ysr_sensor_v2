@@ -13,8 +13,8 @@ class DFR0528:
         self.cellL_addr = 0x04  # cell low check addr
 
         # bus registers
-        self.r_cellH = smbus.bus.read_byte_data(self.addr, self.cellH_addr)
-        self.r_cellL = smbus.bus.read_byte_data(self.addr, self.cellL_addr)
+        self.r_cellH = bus.read_byte_data(self.addr, self.cellH_addr)
+        self.r_cellL = bus.read_byte_data(self.addr, self.cellL_addr)
 
         self.charged_capacity = None
         self.total_capacity = 4400
@@ -25,7 +25,7 @@ class DFR0528:
         vcellL = self.r_cellL
 
         self.charged_capacity = (((vcellH & 0x0F) << 8) + vcellL) * 1.25  # capacity
-        self.capacity_percent = self.charged_capacity/self.total_capacity
+        self.capacity_percent = (self.charged_capacity/self.total_capacity)*100
 
         # see below for testing
         # self.capacity = random.randint(0, 100)

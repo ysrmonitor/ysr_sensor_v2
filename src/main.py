@@ -64,6 +64,10 @@ class Controller:
 
             for match in re.finditer("[0-9][0-9]:.*[0-9][0-9, 'a-g']", line):
                 print(match.group())
+
+        # TODO actually check busses and alert otherwise
+        # TODO screen stuff
+
         return
 
     def update_data_records(self):
