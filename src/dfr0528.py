@@ -3,24 +3,29 @@ import smbus
 # for testing only
 import random
 
+bus = smbus.SMBus(1)
+
 
 class DFR0528:
     def __init__(self):
-        self.addr = '0x10'  # main addr
-        self.cellH_addr = '0x03'  # cell high check addr
-        self.cellL_addr = '0x04'  # cell low check addr
+        self.addr = 0x10  # main addr
+        self.cellH_addr = 0x03  # cell high check addr
+        self.cellL_addr = 0x04  # cell low check addr
 
         # bus registers
-        self.r_cellH = smbus.bus.read_byte(self.addr, self.cellH_addr)
-        self.r_cellL = smbus.bus.read_byte(self.addr, self.cellL_addr)
+        self.r_cellH = smbus.bus.read_byte_data(self.addr, self.cellH_addr)
+        self.r_cellL = smbus.bus.read_byte_data(self.addr, self.cellL_addr)
 
-        self.capacity = None
+        self.charged_capacity = None
+        self.total_capacity = 4400
+        self.capacity_percent = None
 
     def update_capacity(self):
         vcellH = self.r_cellH
         vcellL = self.r_cellL
 
-        self.capacity = (((vcellH&0x0F) << 8)+vcellL)*1.25  # capacity
+        self.charged_capacity = (((vcellH & 0x0F) << 8) + vcellL) * 1.25  # capacity
+        self.capacity_percent = self.charged_capacity/self.total_capacity
 
         # see below for testing
         # self.capacity = random.randint(0, 100)

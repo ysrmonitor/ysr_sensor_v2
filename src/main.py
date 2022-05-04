@@ -44,10 +44,10 @@ class Controller:
 
         bus_addrs = dict()
 
-        bus_addrs['bme1'] = '0x76'
-        bus_addrs['bme2'] = '0x77'
-        bus_addrs['screen'] = '0x3c'
-        bus_addrs['ups'] = '0x10'
+        bus_addrs['bme1'] = 0x76
+        bus_addrs['bme2'] = 0x77
+        bus_addrs['screen'] = 0x3c
+        bus_addrs['ups'] = 0x10
 
         self.check_bus()
 
@@ -62,7 +62,7 @@ class Controller:
         for i in range(0, 9):
             line = str(p.stdout.readline())
 
-            for match in re.finditer("[0-9][0-9]:.*[0-9][0-9]", line):
+            for match in re.finditer("[0-9][0-9]:.*[0-9][0-9, 'a-g']", line):
                 print(match.group())
         return
 
@@ -77,7 +77,7 @@ class Controller:
         avg_temp = (temp1 + temp2)/2
 
         # STORAGE HEADER - timestamp, temp1, temp2, avgtemp, batt_capacity
-        to_store = [timestamp, temp1, temp2, avg_temp, self.ups.capacity]
+        to_store = [timestamp, temp1, temp2, avg_temp, self.ups.capacity_percent]
 
         # setup cdl
         x = ','.join(map(str, to_store))
@@ -91,8 +91,9 @@ class Controller:
         # debuggin
         print(x)
         print('avg: ' + str(avg_temp))
+        print('batt: ' + str(self.ups.capacity_percent) + '%')
         if avg_temp >= -10:
-            print('fucked')
+            print('alert')
 
         return
 
