@@ -18,6 +18,8 @@ import time
 import pathlib
 import subprocess
 import re
+import smbus2
+import bme280
 
 DATA_FILE_NAME = 'data.txt'
 DATA_FILEPATH = pathlib.Path(__file__).parent.resolve().joinpath(DATA_FILE_NAME)
@@ -34,10 +36,22 @@ class Controller:
 
         bmes = dict()
 
-        bmes['bme1'] = BME280(self.bus_addrs['bme1'])
-        bmes['bme2'] = BME280(self.bus_addrs['bme2'])
+        bmes['bme1'] = self.sample_bme(self.bus_addrs['bme1'])
+        bmes['bme2'] = self.sample_bme(self.bus_addrs['bme2'])
 
         return bmes
+
+    def sample_bme(self, addr):
+        port = 1
+        bus = smbus2.SMBus(port)
+
+        calibration_params = bme280.load_calibration_params(bus, addr)
+
+        # the sample method will take a single reading and return a
+        # compensated_reading object
+        data = bme280.sample(bus, addr, calibration_params)
+
+        return data
 
     def init_bus_vars(self):
         """ init all bus addresses for expected devices"""
@@ -64,6 +78,9 @@ class Controller:
 
             for match in re.finditer("[0-9][0-9]:.*[0-9][0-9, 'a-g']", line):
                 print(match.group())
+                split1 = match.group().split()
+                for s in split1:
+                    print(s)
 
         # TODO actually check busses and alert otherwise
         # TODO screen stuff
@@ -104,8 +121,9 @@ class Controller:
     def update_controller(self):
         """ update state of all peripherals connected to controller """
 
-        for bme in self.temp_sensors:
-            self.temp_sensors[bme].update_sensor()
+        for bme in self.temp_sensors.keys():
+            # self.temp_sensors[bme].update_sensor()
+            self.temp_sensors[bme] = self.sample_bme(self.bus_addrs[bme])
 
         self.ups.update_capacity()
 
