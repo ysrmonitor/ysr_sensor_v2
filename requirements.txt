@@ -2,3 +2,4 @@ datetime~=4.4
 pathlib~=1.0.1
 smbus2
 pimoroni-bme280
+tabulate

@@ -15,6 +15,8 @@ DATA_FILEPATH = pathlib.Path(__file__).parent.resolve().joinpath(DATA_FILE_NAME)
 class Controller:
     def __init__(self):
         self.bus_addrs = self.init_bus_vars()
+        self.check_bus()
+
         self.bme_sensors = self.init_temp_sensors()
         self.ups = ups.DFR0528()
 
@@ -52,7 +54,7 @@ class Controller:
         bus_addrs['screen'] = 0x3c
         bus_addrs['ups'] = 0x10
 
-        self.check_bus()
+        # self.check_bus()
 
         return bus_addrs
 
@@ -66,7 +68,7 @@ class Controller:
             line = str(p.stdout.readline())
 
             for match in re.finditer("[0-9][0-9]:.*[0-9][0-9, 'a-g']", line):
-                print(match.group())
+                # print(match.group())
                 split1 = match.group().split()
                 match_rows += split1
 
