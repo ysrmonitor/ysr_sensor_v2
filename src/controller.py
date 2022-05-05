@@ -14,13 +14,12 @@ DATA_FILEPATH = pathlib.Path(__file__).parent.resolve().joinpath(DATA_FILE_NAME)
 
 class Controller:
     def __init__(self):
+        self.alerts = list()
         self.bus_addrs = self.init_bus_vars()
         self.check_bus()
 
         self.bme_sensors = self.init_temp_sensors()
         self.ups = ups.DFR0528()
-
-        self.alerts = list()
 
     def init_temp_sensors(self):
         """ init bme sensors and BME objects -> dict containing BME objects """
@@ -79,7 +78,8 @@ class Controller:
         # compare to bus_addrs
         for key in self.bus_addrs.keys():
             addr = self.bus_addrs[key]
-            addr = str(addr[-2:])  # only compare last two addr elements as string
+            addr = str(addr)  # only compare last two addr elements as string
+            addr = addr[-2:]
 
             if addr not in match_rows:
                 self.alerts.append(AlertFactory().alert_factory(a_type='bus_disconnect', sensor=key))
