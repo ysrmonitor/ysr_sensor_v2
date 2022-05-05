@@ -5,4 +5,5 @@ tabulate~=0.8.9
 board~=1.0
 Pillow
 busio
-Adafruit-SSD1306
+install adafruit-circuitpython-ssd1306
+adafruit-blinka

@@ -3,7 +3,8 @@ import subprocess
 from board import SCL, SDA
 import busio
 from PIL import Image, ImageDraw, ImageFont
-import Adafruit_SSD1306
+# import Adafruit_SSD1306
+import adafruit_ssd1306
 
 # Create the I2C interface.
 i2c = busio.I2C(SCL, SDA)
@@ -11,10 +12,10 @@ i2c = busio.I2C(SCL, SDA)
 # The first two parameters are the pixel width and pixel height. Change these
 # to the right size for your display!
 
-disp = Adafruit_SSD1306.SSD1306Base(128, 32, i2c)
+disp = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c)
 # Clear display.
-disp.clear()
-disp.display()
+disp.fill(0)
+disp.show()
 # Create blank image for drawing.
 # Make sure to create image with mode '1' for 1-bit color.
 width = disp.width
@@ -57,5 +58,5 @@ while True:
     draw.text((x, top + 25), Disk, font=font, fill=255)
     # Display image.
     disp.image(image)
-    disp.display()
+    disp.show()
     time.sleep(0.1)

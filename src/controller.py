@@ -21,6 +21,16 @@ class Controller:
         self.bme_sensors = self.init_temp_sensors()
         self.ups = ups.DFR0528()
 
+        self.T1 = None
+        self.T2 = None
+        self.TAvg = None
+
+        self.H1 = None
+        self.H2 = None
+        self.HAvg = None
+
+        self.batt = None
+
     def init_temp_sensors(self):
         """ init bme sensors and BME objects -> dict containing BME objects """
 
@@ -127,23 +137,23 @@ class Controller:
         timestamp = datetime.datetime.now()
 
         # data processing
-        temp1 = self.bme_sensors['bme1'].temperature
-        temp2 = self.bme_sensors['bme2'].temperature
-        avg_temp = (temp1 + temp2)/2
+        self.T1 = self.bme_sensors['bme1'].temperature
+        self.T2 = self.bme_sensors['bme2'].temperature
+        self.TAvg = (self.T1 + self.T2)/2
 
-        hum1 = self.bme_sensors['bme1'].humidity
-        hum2 = self.bme_sensors['bme2'].humidity
-        avg_hum = (hum1 + hum2)/2
+        self.H1 = self.bme_sensors['bme1'].humidity
+        self.H2 = self.bme_sensors['bme2'].humidity
+        self.HAvg = (self.H1 + self.H2)/2
 
-        batt_capacity = self.ups.capacity_percent
+        self.batt = self.ups.charged_capacity
 
-        if avg_temp >= temp_max_allowable:
-            self.alerts.append(AlertFactory().alert_factory(a_type='environment', temp=avg_temp))
+        if self.TAvg >= temp_max_allowable:
+            self.alerts.append(AlertFactory().alert_factory(a_type='environment', temp=self.TAvg))
 
-        if avg_hum >= humidity_max_allowable:
-            self.alerts.append(AlertFactory().alert_factory(a_type='environment', hum=avg_hum))
+        if self.HAvg >= humidity_max_allowable:
+            self.alerts.append(AlertFactory().alert_factory(a_type='environment', hum=self.HAvg))
 
         # STORAGE HEADER - timestamp, temp1, temp2, avg_temp, hum1, hum2, avg_hum, batt_capacity
-        to_store = [timestamp, temp1, temp2, avg_temp, hum1, hum2, avg_hum, batt_capacity]
+        to_store = [timestamp, self.T1, self.T2, self.TAvg, self.H1, self.H2, self.HAvg, self.batt]
 
         return to_store
