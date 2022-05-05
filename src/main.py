@@ -1,168 +1,26 @@
-# TODO get data
-# TODO check data
-# TODO store data comma delim
-# TODO email infrastruct
-# TODO boot
-# TODO other peripherals
 
-# short term todo
+# TODO rconcile requiremtnes
 # todo implement screen stuff
+# todo alerts
+# todo scan for request emails
 
-# for testing
-# from tests import BME280
-import dfr0528 as ups
-
-from bme280 import BME280
-import datetime
 import time
-import pathlib
-import subprocess
-import re
-import smbus2
-import bme280
+from controller import Controller
 
-DATA_FILE_NAME = 'data.txt'
-DATA_FILEPATH = pathlib.Path(__file__).parent.resolve().joinpath(DATA_FILE_NAME)
-
-
-class Controller:
-    def __init__(self):
-        self.bus_addrs = self.init_bus_vars()
-        self.temp_sensors = self.init_temp_sensors()
-        self.ups = ups.DFR0528()
-
-    def init_temp_sensors(self):
-        """ init bme sensors and BME objects -> dict containing BME objects """
-
-        bmes = dict()
-
-        bmes['bme1'] = self.sample_bme(self.bus_addrs['bme1'])
-        bmes['bme2'] = self.sample_bme(self.bus_addrs['bme2'])
-
-        return bmes
-
-    def sample_bme(self, addr):
-        port = 1
-        bus = smbus2.SMBus(port)
-
-        calibration_params = bme280.load_calibration_params(bus, addr)
-
-        # the sample method will take a single reading and return a
-        # compensated_reading object
-        data = bme280.sample(bus, addr, calibration_params)
-
-        return data
-
-    def init_bus_vars(self):
-        """ init all bus addresses for expected devices"""
-
-        bus_addrs = dict()
-
-        bus_addrs['bme1'] = 0x76
-        bus_addrs['bme2'] = 0x77
-        bus_addrs['screen'] = 0x3c
-        bus_addrs['ups'] = 0x10
-
-        self.check_bus()
-
-        return bus_addrs
-
-    def check_bus(self):
-        """ check all requested buses are available/connected """
-
-        p = subprocess.Popen(['i2cdetect', '-y', '1'], stdout=subprocess.PIPE,)
-        # cmdout = str(p.communicate())
-
-        for i in range(0, 9):
-            line = str(p.stdout.readline())
-
-            for match in re.finditer("[0-9][0-9]:.*[0-9][0-9, 'a-g']", line):
-                print(match.group())
-                split1 = match.group().split()
-                for s in split1:
-                    print(s)
-
-        # TODO actually check busses and alert otherwise
-        # TODO screen stuff
-
-        return
-
-    def update_data_records(self):
-        """ store sensing variables and timestamp """
-
-        timestamp = datetime.datetime.now()
-
-        # data processing
-        temp1 = self.temp_sensors['bme1'].temperature
-        temp2 = self.temp_sensors['bme2'].temperature
-        avg_temp = (temp1 + temp2)/2
-
-        # STORAGE HEADER - timestamp, temp1, temp2, avgtemp, batt_capacity
-        to_store = [timestamp, temp1, temp2, avg_temp, self.ups.capacity_percent]
-
-        # setup cdl
-        x = ','.join(map(str, to_store))
-        x += '\n'
-
-        # write to txt
-        data_file = open(DATA_FILEPATH, 'a')
-        data_file.write(x)
-        data_file.close()
-
-        # debuggin
-        print(x)
-        print('avg: ' + str(avg_temp))
-        print('batt: ' + str(self.ups.capacity_percent) + '%')
-        if avg_temp >= -10:
-            print('alert')
-
-        return
-
-    def update_controller(self):
-        """ update state of all peripherals connected to controller """
-
-        for bme in self.temp_sensors.keys():
-            # self.temp_sensors[bme].update_sensor()
-            self.temp_sensors[bme] = self.sample_bme(self.bus_addrs[bme])
-
-        self.ups.update_capacity()
+# frequency of sensor update in seconds
+UPDATE_FREQ = 1
 
 
 def main():
-    # bme1 = BME280(0x76)
-    # bme2 = BME280(0x77)
-    #
-    # timestamp = datetime.datetime.now()
-    # bme1.update_sensor()
-    # bme2.update_sensor()
-    #
-    # avg_temp = (bme1.temperature + bme2.temperature)/2
-    #
-    # # STORAGE HEADER - timestamp, temp1, temp2, avgtemp
-    # to_store = [timestamp, bme1.temperature, bme2.temperature, avg_temp]
-    #
-    # # setup cdl
-    # x = ','.join(map(str, to_store))
-    # x += '\n'
-    # print(x)
-    # print('avg: ' + str(avg_temp))
-    # if avg_temp >= -10:
-    #     print('fucked')
-    #
-    # # write to txt
-    # data_file = open(DATA_FILEPATH, 'a')
-    # data_file.write(x)
-    # data_file.close()
 
     controller = Controller()
-    controller.update_controller()
-    controller.update_data_records()
 
-    print()
+    controller.update_controller()
+    controller.update_data_records(to_console=True)
 
 
 if __name__ == '__main__':
     x = 2
     while x > 1:
         main()
-        time.sleep(1)
+        time.sleep(UPDATE_FREQ)
