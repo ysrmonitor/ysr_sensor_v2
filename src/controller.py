@@ -6,7 +6,7 @@ import re
 import smbus2
 import bme280
 import tabulate
-from alert import AlertFactory
+# from alert import AlertFactory
 
 DATA_FILE_NAME = 'data.txt'
 DATA_FILEPATH = pathlib.Path(__file__).parent.resolve().joinpath(DATA_FILE_NAME)
@@ -29,7 +29,16 @@ class Controller:
         self.H2 = None
         self.HAvg = None
 
-        self.batt = None
+        self.batt_charge = None
+        self.batt_capacity = self.ups.total_capacity
+
+    def update_status(self):
+        self.process_alerts()
+        # todo send status email - delete old status email
+
+    def process_alerts(self):
+        for alert in self.alerts:
+            alert.process()
 
     def init_temp_sensors(self):
         """ init bme sensors and BME objects -> dict containing BME objects """
@@ -92,7 +101,7 @@ class Controller:
             addr = addr[-2:]
 
             if addr not in match_rows:
-                self.alerts.append(AlertFactory().alert_factory(a_type='bus_disconnect', sensor=key))
+                raise OSError
             else:
                 print(key + " connected!")
 
@@ -107,14 +116,14 @@ class Controller:
         x += '\n'
 
         # write to txt
-        data_file = open(DATA_FILEPATH, 'a')
-        data_file.write(x)
-        data_file.close()
+        with open(DATA_FILEPATH, 'a') as data_file:
+            data_file.write(x)
+            data_file.close()
 
         # debugging
         if to_console:
             header = ['timestamp', 'temp1', 'temp2', 'avg_temp', 'hum1', 'hum2', 'avg_hum', 'batt_capacity']
-            print(tabulate.tabulate(to_store, header))
+            print(tabulate.tabulate([to_store], header))
 
         return
 
@@ -145,15 +154,20 @@ class Controller:
         self.H2 = self.bme_sensors['bme2'].humidity
         self.HAvg = (self.H1 + self.H2)/2
 
-        self.batt = self.ups.charged_capacity
+        self.batt_charge = self.ups.charged_capacity
 
         if self.TAvg >= temp_max_allowable:
-            self.alerts.append(AlertFactory().alert_factory(a_type='environment', temp=self.TAvg))
+            raise EnvAlert
 
         if self.HAvg >= humidity_max_allowable:
-            self.alerts.append(AlertFactory().alert_factory(a_type='environment', hum=self.HAvg))
+            raise EnvAlert
 
         # STORAGE HEADER - timestamp, temp1, temp2, avg_temp, hum1, hum2, avg_hum, batt_capacity
-        to_store = [timestamp, self.T1, self.T2, self.TAvg, self.H1, self.H2, self.HAvg, self.batt]
+        to_store = [timestamp, self.T1, self.T2, self.TAvg, self.H1, self.H2, self.HAvg, self.batt_charge]
 
         return to_store
+
+
+class EnvAlert(Exception):
+    """ issue with one or more env variables """
+    pass

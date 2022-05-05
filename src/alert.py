@@ -22,6 +22,7 @@ class BusAlert(Alert):
 
     def process(self):
         # todo email all on alets list
+        # todo display to screen
         print(self.info['sensor'] + 'disconnected!')
         super().process()
         return
