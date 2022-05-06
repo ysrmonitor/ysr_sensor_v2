@@ -127,7 +127,7 @@ class Controller:
         with open(DATA_FILEPATH, 'a') as data_file:
             # write header to file if empty
             if os.stat(DATA_FILEPATH).st_size == 0:
-                data_file.write(header_str)
+                data_file.write(header_str + '\n')
             data_file.write(x)
         data_file.close()
 
@@ -173,7 +173,7 @@ class Controller:
             raise EnvError
 
         # STORAGE HEADER - timestamp, temp1, temp2, avg_temp, hum1, hum2, avg_hum, batt_capacity
-        to_store = [timestamp, self.T1, self.T2, self.TAvg, self.H1, self.H2, self.HAvg, self.batt_charge]
+        to_store = [timestamp, self.T1, self.T2, self.TAvg, self.H1, self.H2, self.HAvg, self.batt_charge/self.batt_capacity]
 
         return to_store
 
