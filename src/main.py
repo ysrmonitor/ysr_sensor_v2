@@ -12,7 +12,7 @@ from screen import Screen
 UPDATE_FREQ = 1
 
 
-def main(controller):
+def main(controller, screen=None):
     x = 2
     while x > 1:
         try:
@@ -29,8 +29,12 @@ def main(controller):
             # todo send env alert message
             pass
 
+        except OSError:
+            print('Sensor disconnected!')
+            # todo send env alert message
+            pass
+
         try:
-            screen = Screen()
             lines = ['T1: {}C, T2: {}C'.format(round(controller.T1, 1), round(controller.T2, 1)),
                      'H1: {}%, H2: {}%'.format(round(controller.H1, 1), round(controller.H2, 1)),
                      'Battery: {}/{}'.format(controller.batt_charge, controller.batt_capacity)]
@@ -45,7 +49,15 @@ def main(controller):
 if __name__ == '__main__':
     try:
         controller = Controller()
-        main(controller)
+        try:
+            screen = Screen()
+            main(controller, screen)
+
+        except ValueError:
+            main(controller)
+            print("Screen disconnected")
+            # todo send screen disconnected message
+            pass
 
     except SensorError:
         print("Sensor disconnected")
@@ -56,3 +68,6 @@ if __name__ == '__main__':
         print("Environment Issue!")
         # todo send env alert message
         pass
+
+
+

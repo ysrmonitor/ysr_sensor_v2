@@ -7,6 +7,8 @@ import smbus2
 import bme280
 import tabulate
 import os
+import pytz
+from email_handler import GMailAcc
 # from alert import AlertFactory
 
 DATA_FILE_NAME = 'data.txt'
@@ -33,8 +35,13 @@ class Controller:
         self.batt_charge = None
         self.batt_capacity = self.ups.total_capacity
 
-    def update_status(self):
-        # todo send status email - delete old status email
+    def update_status(self, interval):
+        gmail_acc = GMailAcc()  # init gmail account
+
+        # send status email with Status as subject line, and response interval in seconds with s appended
+        email = gmail_acc.create_message(gmail_acc.address, gmail_acc.address, 'Status', interval + 's')
+        gmail_acc.send_message(gmail_acc.address, email)
+
         return
 
     def init_temp_sensors(self):
@@ -61,6 +68,7 @@ class Controller:
         # the sample method will take a single reading and return a
         # compensated_reading object
         data = bme280.sample(bus, addr, calibration_params)
+        bus.close()
 
         return data
 
@@ -154,6 +162,7 @@ class Controller:
         humidity_max_allowable = 80
 
         timestamp = datetime.datetime.now()
+        timestamp = timestamp.replace(tzinfo=pytz.timezone('Canada/Yukon'))
 
         # data processing
         self.T1 = self.bme_sensors['bme1'].temperature
