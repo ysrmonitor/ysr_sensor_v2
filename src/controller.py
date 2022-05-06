@@ -6,6 +6,7 @@ import re
 import smbus2
 import bme280
 import tabulate
+import os
 # from alert import AlertFactory
 
 DATA_FILE_NAME = 'data.txt'
@@ -33,20 +34,21 @@ class Controller:
         self.batt_capacity = self.ups.total_capacity
 
     def update_status(self):
-        self.process_alerts()
         # todo send status email - delete old status email
-
-    def process_alerts(self):
-        for alert in self.alerts:
-            alert.process()
+        return
 
     def init_temp_sensors(self):
         """ init bme sensors and BME objects -> dict containing BME objects """
 
         bmes = dict()
-
-        bmes['bme1'] = self.sample_bme(self.bus_addrs['bme1'])
-        bmes['bme2'] = self.sample_bme(self.bus_addrs['bme2'])
+        try:
+            bmes['bme1'] = self.sample_bme(self.bus_addrs['bme1'])
+        except OSError:
+            raise SensorError
+        try:
+            bmes['bme2'] = self.sample_bme(self.bus_addrs['bme2'])
+        except OSError:
+            raise SensorError
 
         return bmes
 
@@ -110,19 +112,27 @@ class Controller:
     def update_data_records(self, to_console=False):
         """ store sensing variables and timestamp """
         to_store = self.process_inputs()
+        header = ['timestamp', 'temp1', 'temp2', 'avg_temp', 'hum1', 'hum2', 'avg_hum', 'batt_capacity']
+        # convert header list to string for txt data
+        header_str = ""
+        for item in header:
+            header_str += item
+            header_str += ', '
 
-        # setup cdl
+        # setup comma delimited string
         x = ','.join(map(str, to_store))
         x += '\n'
 
         # write to txt
         with open(DATA_FILEPATH, 'a') as data_file:
+            # write header to file if empty
+            if os.stat(DATA_FILEPATH).st_size == 0:
+                data_file.write(header_str)
             data_file.write(x)
-            data_file.close()
+        data_file.close()
 
         # debugging
         if to_console:
-            header = ['timestamp', 'temp1', 'temp2', 'avg_temp', 'hum1', 'hum2', 'avg_hum', 'batt_capacity']
             print(tabulate.tabulate([to_store], header))
 
         return
@@ -155,12 +165,12 @@ class Controller:
         self.HAvg = (self.H1 + self.H2)/2
 
         self.batt_charge = self.ups.charged_capacity
+        # todo determine capacity and raise batterror when low
 
         if self.TAvg >= temp_max_allowable:
-            raise EnvAlert
-
+            raise EnvError
         if self.HAvg >= humidity_max_allowable:
-            raise EnvAlert
+            raise EnvError
 
         # STORAGE HEADER - timestamp, temp1, temp2, avg_temp, hum1, hum2, avg_hum, batt_capacity
         to_store = [timestamp, self.T1, self.T2, self.TAvg, self.H1, self.H2, self.HAvg, self.batt_charge]
@@ -168,6 +178,11 @@ class Controller:
         return to_store
 
 
-class EnvAlert(Exception):
+class EnvError(Exception):
+    """ issue with one or more env variables """
+    pass
+
+
+class SensorError(Exception):
     """ issue with one or more env variables """
     pass

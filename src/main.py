@@ -5,7 +5,7 @@
 # todo scan for request emails
 
 import time
-from controller import Controller, EnvAlert
+from controller import Controller, EnvError, SensorError
 from screen import Screen
 
 # frequency of sensor update in seconds
@@ -31,12 +31,12 @@ def main():
             # todo send screen disconnected message
             pass
 
-    except OSError:
+    except SensorError:
         print("Sensor disconnected")
         # todo send sensor disconnected message
         pass
 
-    except EnvAlert:
+    except EnvError:
         print("Environment Issue!")
         # todo send env alert message
         pass

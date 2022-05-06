@@ -1,14 +1,14 @@
 from distutils.core import setup
 
 setup(name='ysr_monitor',
-      version='0.0.10',
+      version='0.0.11',
       packages=['src'],
       license='MIT',
       description='ysr_monitor',
       author='YSR',
       author_email='ysr.monitor@gmail.com',
       url='https://github.com/ysrmonitor/ysr_monitor.git',
-      download_url='https://github.com/ysrmonitor/ysr_monitor/archive/refs/tags/v0.0.10.tar.gz',
+      download_url='https://github.com/ysrmonitor/ysr_monitor/archive/refs/tags/v0.0.11.tar.gz',
       keywords=['seed', 'monitoring', 'sensing', 'rpi'],
       install_requires=[
       ],
