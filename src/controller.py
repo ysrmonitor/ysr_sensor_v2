@@ -17,7 +17,7 @@ class Controller:
     def __init__(self):
         self.alerts = list()
         self.bus_addrs = self.init_bus_vars()
-        self.check_bus()
+        # self.check_bus()
 
         self.bme_sensors = self.init_temp_sensors()
         self.ups = ups.DFR0528()
@@ -150,8 +150,8 @@ class Controller:
         """ process sensor inputs and ensure all are within limits """
 
         # desired limits set by user
-        temp_max_allowable = 0
-        humidity_max_allowable = 20
+        temp_max_allowable = 25
+        humidity_max_allowable = 80
 
         timestamp = datetime.datetime.now()
 
@@ -173,7 +173,7 @@ class Controller:
             raise EnvError
 
         # STORAGE HEADER - timestamp, temp1, temp2, avg_temp, hum1, hum2, avg_hum, batt_capacity
-        to_store = [timestamp, self.T1, self.T2, self.TAvg, self.H1, self.H2, self.HAvg, self.batt_charge/self.batt_capacity]
+        to_store = [timestamp, self.T1, self.T2, self.TAvg, self.H1, self.H2, self.HAvg, (self.batt_charge/self.batt_capacity)*100]
 
         return to_store
 
