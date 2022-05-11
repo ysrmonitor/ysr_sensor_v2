@@ -5,7 +5,7 @@ tabulate~=0.8.9
 board~=1.0
 Pillow~=9.1.0
 busio
-install adafruit-circuitpython-ssd1306
+adafruit-circuitpython-ssd1306
 adafruit-blinka
 bme280
 pytz~=2022.1

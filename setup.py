@@ -1,16 +1,29 @@
 from distutils.core import setup
 
 setup(name='ysr_monitor',
-      version='0.0.14',
+      version='0.1.0',
       packages=['src'],
       license='MIT',
       description='ysr_monitor',
       author='YSR',
       author_email='ysr.monitor@gmail.com',
       url='https://github.com/ysrmonitor/ysr_monitor.git',
-      download_url='https://github.com/ysrmonitor/ysr_monitor/archive/refs/tags/v0.0.14.tar.gz',
+      download_url='https://github.com/ysrmonitor/ysr_monitor/archive/refs/tags/v0.1.0.tar.gz',
       keywords=['seed', 'monitoring', 'sensing', 'rpi'],
       install_requires=[
+            'datetime~=4.4',
+            'pathlib~=1.0.1',
+            'smbus2~=0.4.1',
+            'tabulate~=0.8.9',
+            'board~=1.0',
+            'Pillow~=9.1.0',
+            'adafruit-circuitpython-ssd1306',
+            'adafruit-blinka',
+            'pytz~=2022.1',
+            'httplib2~=0.20.4',
+            'google-api-python-client',
+            'google-auth-httplib2',
+            'google-auth-oauthlib',
       ],
       classifiers=[
             'Development Status :: 3 - Alpha',      # Chose either "3 - Alpha", "4 - Beta" or "5 - Production/Stable" as the current state of your package
