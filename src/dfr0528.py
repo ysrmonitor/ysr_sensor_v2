@@ -21,5 +21,6 @@ class DFR0528:
         # update props
         self.charged_capacity = (((vcellH & 0x0F) << 8) + vcellL) * 1.25  # total charged capacity [mAh]
         self.capacity_percent = (self.charged_capacity/self.total_capacity)*100  # capacity as percentage
+        bus.close()
 
         return
