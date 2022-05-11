@@ -227,18 +227,22 @@ class Controller:
                     for member in alerts_list:
                         if '@' and '.c' not in member:
                             alerts_list.remove(member)
-                except KeyError: # case where alerts - members sheet is empty
+                    self.alerts_members = alerts_list
+                except KeyError:  # case where alerts - members sheet is empty
+                    alerts_list = DEFAULT_ALERTS_MEMBERS
+                    self.alerts_members = alerts_list
+
                     error_message = "No valid alerts members found in Alerts - Members sheet, please enter valid emails in column A of Alerts - Members. Alerts will only be sent to defaults!"
                     self.log_init_issue(error_message)
-                    alerts_list = DEFAULT_ALERTS_MEMBERS
 
                 if len(alerts_list) == 0:  # case where no valid email addresses are found
+                    alerts_list = DEFAULT_ALERTS_MEMBERS
+                    self.alerts_members = alerts_list
+
                     error_message = "No valid alerts members found in Alerts - Members sheet, please enter valid emails in column A of Alerts - Members. Alerts will only be sent to defaults!"
                     self.log_init_issue(error_message)
-                    alerts_list = DEFAULT_ALERTS_MEMBERS
 
-
-        return alerts_list
+        return
 
     def get_env_limits(self):
         """ get default environment limits from sheet """
