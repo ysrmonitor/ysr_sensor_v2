@@ -29,8 +29,6 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.send',
           'https://www.googleapis.com/auth/spreadsheets',
           'https://www.googleapis.com/auth/drive']
 
-# todo init with alerts list as email? - system will not have access to alerts list
-
 
 class GoogAcc:
     def __init__(self):

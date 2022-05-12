@@ -12,10 +12,13 @@ from email_handler import GMailAcc, DriveAcc, SheetsAcc
 from httplib2.error import ServerNotFoundError
 import os
 from screen import Screen
+from googleapiclient.errors import HttpError
+import socket
 
 # data storage globals
 DATA_FILE_NAME = 'data.txt'
 DATA_FILEPATH = pathlib.Path(__file__).parent.resolve().joinpath(DATA_FILE_NAME)
+DATA_FILEPATH = pathlib.PurePosixPath(DATA_FILEPATH).__str__()
 
 # required spreadsheets globals
 ALERTS_MEMBERS = 'Alerts - Members'
@@ -32,8 +35,8 @@ DEFAULT_MIN_TEMP = -10
 DEFAULT_MAX_TEMP = 30
 DEFAULT_MIN_HUM = 0
 DEFAULT_MAX_HUM = 100
-DEFAULT_MIN_PRESS = 90
-DEFAULT_MAX_PRESS = 110
+DEFAULT_MIN_PRESS = 900
+DEFAULT_MAX_PRESS = 1100
 
 values = [
     ['Measurement Frequency [s]', DEFAULT_MEASUREMENT_FREQ],
@@ -48,7 +51,7 @@ DEFAULT_SHEET_INFO[OPERATING_PARAMETERS]['range'] = 'Sheet1!A1:B1'
 values = [
     ['', 'Min.', 'Max.'],
     ['Temperature [C]', DEFAULT_MIN_TEMP, DEFAULT_MAX_TEMP],
-    ['Pressure [kPa]', DEFAULT_MIN_PRESS, DEFAULT_MAX_PRESS],
+    ['Pressure [Pa]', DEFAULT_MIN_PRESS, DEFAULT_MAX_PRESS],
     ['Humidity [%]', DEFAULT_MIN_HUM, DEFAULT_MAX_HUM]
 ]
 body = {
@@ -79,6 +82,7 @@ class Controller:
         self.alerts = list()
 
         self.bus_addrs = self.init_bus_vars()
+        self.bus_addrs_str = self.init_bus_vars_str()
         # self.check_bus()
 
         self.bme_sensors = self.init_temp_sensors()
@@ -107,10 +111,13 @@ class Controller:
 
         self.check_sheets()
 
-        self.alerts_members = self.get_alerts_members()
+        self.alerts_members = None
+        self.get_alerts_members()
+
         self.env_limits = self.get_env_limits()
         self.meas_freq = self.get_frequency()
 
+        self.check_bus()
         self.deliver_warnings()
         self.deliver_alerts()
 
@@ -123,33 +130,51 @@ class Controller:
             freq_external = False
 
         while True:
-            self.update_status(freq)
-            self.check_data_requests()
-            self.env_limits = self.get_env_limits()
-
-            if not freq_external:  # if no external freq passed, use sheet freq in operating params
-                freq = self.get_frequency()
-
-            self.init_temp_sensors()
-            self.update_controller()
-            self.update_data_records(to_console=True)
-
-            # try displaying to screen
+            start = time.time()
             try:
-                lines = ['T1: {}C, T2: {}C'.format(round(self.T1, 1), round(self.T2, 1)),
-                         'H1: {}%, H2: {}%'.format(round(self.H1, 1), round(self.H2, 1)),
-                         'P1: {}kPa, P2: {}kPa'.format(round(self.P1, 1), round(self.P2, 1))]
-                self.screen.display(lines=lines)
+                self.update_status(freq)
+                self.check_sheets()
+                self.check_data_requests()
+                self.env_limits = self.get_env_limits()
 
-            except ValueError:
-                error_message = "Screen disconnected or cannot be initialized!"
-                self.log_peripheral_issue(error_message)
-            pass
+                if not freq_external:  # if no external freq passed, use sheet freq in operating params
+                    freq = self.get_frequency()
 
-            self.deliver_warnings()
-            self.deliver_alerts()
+                try:
+                    self.check_bus()  # bus will raise error given any disconnects and bypass everything in try block
 
-            time.sleep(freq)
+                    self.init_temp_sensors()
+                    self.update_controller()
+
+                    self.update_data_records(to_console=True)
+
+                    # try displaying to screen
+                    lines = ['T1: {}C, T2: {}C'.format(round(self.T1, 1), round(self.T2, 1)),
+                             'H1: {}%, H2: {}%'.format(round(self.H1, 1), round(self.H2, 1)),
+                             'P1: {}Pa, P2: {}Pa'.format(round(self.P1, 1), round(self.P2, 1))]
+                    self.screen.display(lines=lines)
+
+                except BusError:
+                    pass
+                except (OSError, ValueError, KeyError):
+                    self.check_bus()
+                    pass
+
+                self.deliver_warnings()
+                self.deliver_alerts()
+
+            except (HttpError, socket.timeout):
+                pass
+
+            # code is timed so that measurements are made at the actual freq
+            # loop only sleeps the frequency MINUS the time required ot exectue the loop
+            end = time.time()
+            time_elapsed = end - start
+            sleep_time = freq - time_elapsed
+            print("Time elapsed: " + str(time_elapsed))
+
+            if not sleep_time <= 0:
+                time.sleep(sleep_time)
 
     def deliver_warnings(self):
         """ send and clear all accumulated warning messages - controller will proceed despite warnings """
@@ -468,8 +493,24 @@ class Controller:
 
         return bus_addrs
 
+    def init_bus_vars_str(self):
+        """ init all bus addresses for expected devices"""
+
+        bus_addrs = dict()
+
+        bus_addrs['bme1'] = '0x76'
+        bus_addrs['bme2'] = '0x77'
+        bus_addrs['screen'] = '0x3c'
+        bus_addrs['ups'] = '0x10'
+
+        # self.check_bus()
+
+        return bus_addrs
+
     def check_bus(self):
         """ check all requested buses are available/connected """
+
+        print('Checking all bus connections...')
 
         p = subprocess.Popen(['i2cdetect', '-y', '1'], stdout=subprocess.PIPE,)
         match_rows = list()
@@ -487,15 +528,16 @@ class Controller:
         match_rows = [x for x in match_rows if ':' not in x]
 
         # compare to bus_addrs
-        for key in self.bus_addrs.keys():
-            addr = self.bus_addrs[key]
-            addr = str(addr)  # only compare last two addr elements as string
+        for key in self.bus_addrs_str.keys():
+            addr = self.bus_addrs_str[key]
             addr = addr[-2:]
 
             if addr not in match_rows:
-                raise OSError
+                error_message = key + " disconnected or cannot be initialized! Measurements cannot be recorded unless all components connected."
+                self.log_peripheral_issue(error_message)
+                raise BusError
             else:
-                print(key + " connected!")
+                print(key + ": confirmed")
 
         return
 
@@ -503,7 +545,7 @@ class Controller:
 
         """ store sensing variables and timestamp """
         to_store = self.process_inputs()
-        header = ['timestamp', 'temp1', 'temp2', 'avg_temp', 'hum1', 'hum2', 'avg_hum', 'press1', 'press2', 'press_avg']
+        header = ['timestamp', 'temp1 [C]', 'temp2 [C]', 'avg_temp [C]', 'hum1 [%]', 'hum2 [%]', 'avg_hum [%]', 'press1 [Pa]', 'press2 [Pa]', 'press_avg [Pa]']
         # convert header list to string for txt data
         header_str = ""
         for item in header:
@@ -615,10 +657,10 @@ class Controller:
 
         # check pressure limits and warn if outside limits
         if self.env_limits['press']['min'] >= self.PAvg:
-            error_message = "Average pressure below minimum! Average Pressure [kPa]: " + str(self.PAvg)
+            error_message = "Average pressure below minimum! Average Pressure [Pa]: " + str(self.PAvg)
             self.log_env_issue(error_message)
         if self.env_limits['press']['max'] <= self.PAvg:
-            error_message = "Average pressure above maximum! Average Pressure [kPa]: " + str(self.PAvg)
+            error_message = "Average pressure above maximum! Average Pressure [Pa]: " + str(self.PAvg)
             self.log_env_issue(error_message)
 
         # check humidity limits and warn if outside limits
@@ -630,7 +672,7 @@ class Controller:
             self.log_env_issue(error_message)
 
         # STORAGE HEADER - timestamp, temp1, temp2, avg_temp, hum1, hum2, avg_hum, press1, press2, avg_press,
-        to_store = [timestamp, self.T1, self.T2, self.TAvg, self.H1, self.H2, self.HAvg]
+        to_store = [timestamp, self.T1, self.T2, self.TAvg, self.H1, self.H2, self.HAvg, self.P1, self.P2, self.PAvg]
 
         return to_store
 
@@ -640,7 +682,7 @@ class EnvError(Exception):
     pass
 
 
-class SensorError(Exception):
+class BusError(Exception):
     """ issue with one or more env variables """
     pass
 
