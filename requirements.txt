@@ -3,7 +3,7 @@ pathlib~=1.0.1
 smbus2~=0.4.1
 tabulate~=0.8.9
 board~=1.0
-Pillow~=9.1.0
+pillow~=9.1.0
 busio
 adafruit-circuitpython-ssd1306
 adafruit-blinka

@@ -149,9 +149,13 @@ class Controller:
                     self.update_data_records(to_console=True)
 
                     # try displaying to screen
+                    cmd = "hostname -I | cut -d' ' -f1"
+                    ip_addy = subprocess.check_output(cmd, shell=True).decode("utf-8")
+
                     lines = ['T1: {}C, T2: {}C'.format(round(self.T1, 1), round(self.T2, 1)),
                              'H1: {}%, H2: {}%'.format(round(self.H1, 1), round(self.H2, 1)),
-                             'P1: {}Pa, P2: {}Pa'.format(round(self.P1, 1), round(self.P2, 1))]
+                             'P1: {}Pa, P2: {}Pa'.format(round(self.P1, 1), round(self.P2, 1)),
+                             'IP: ' + ip_addy]
                     self.screen.display(lines=lines)
 
                 except BusError:
@@ -293,14 +297,14 @@ class Controller:
                 except (ValueError, IndexError):
                     env_limits['temp']['min'] = DEFAULT_MIN_TEMP
                     error_message = "Temperature Min. in Environment Limits is non-numeric and cannot be parsed, " \
-                                    "initialized using default value: {}C".format(DEFAULT_MIN_TEMP)
+                                    "initialized using default value: {}C".format(round(DEFAULT_MIN_TEMP, 2))
                     self.log_init_issue(error_message)
                 try:
                     env_limits['temp']['max'] = int(sheet_temp[1][2])
                 except (ValueError, IndexError):
                     env_limits['temp']['max'] = DEFAULT_MAX_TEMP
                     error_message = "Temperature Max. in Environment Limits is non-numeric and cannot be parsed, " \
-                                    "initialized using default value: {}C".format(DEFAULT_MAX_TEMP)
+                                    "initialized using default value: {}C".format(round(DEFAULT_MAX_TEMP, 2))
                     self.log_init_issue(error_message)
 
                 # set pressure limits
@@ -309,14 +313,14 @@ class Controller:
                 except (ValueError, IndexError):
                     env_limits['press']['min'] = DEFAULT_MIN_PRESS
                     error_message = "Pressure Min. in Environment Limits is non-numeric and cannot be parsed, " \
-                                    "initialized using default value: {}C".format(DEFAULT_MIN_PRESS)
+                                    "initialized using default value: {}C".format(round(DEFAULT_MIN_PRESS, 2))
                     self.log_init_issue(error_message)
                 try:
                     env_limits['press']['max'] = int(sheet_temp[2][2])
                 except (ValueError, IndexError):
                     env_limits['press']['max'] = DEFAULT_MAX_PRESS
                     error_message = "Pressure Max. in Environment Limits is non-numeric and cannot be parsed, " \
-                                    "initialized using default value: {}C".format(DEFAULT_MAX_PRESS)
+                                    "initialized using default value: {}C".format(round(DEFAULT_MAX_PRESS, 2))
                     self.log_init_issue(error_message)
 
                 # set pressure limits
@@ -325,14 +329,14 @@ class Controller:
                 except (ValueError, IndexError):
                     env_limits['hum']['min'] = DEFAULT_MIN_HUM
                     error_message = "Humidity Min. in Environment Limits is non-numeric and cannot be parsed, " \
-                                    "initialized using default value: {}C".format(DEFAULT_MIN_HUM)
+                                    "initialized using default value: {}C".format(round(DEFAULT_MIN_HUM, 2))
                     self.log_init_issue(error_message)
                 try:
                     env_limits['hum']['max'] = int(sheet_temp[3][2])
                 except (ValueError, IndexError):
                     env_limits['hum']['max'] = DEFAULT_MAX_HUM
                     error_message = "Humidity Max. in Environment Limits is non-numeric and cannot be parsed, " \
-                                    "initialized using default value: {}C".format(DEFAULT_MAX_HUM)
+                                    "initialized using default value: {}C".format(round(DEFAULT_MAX_HUM, 2))
                     self.log_init_issue(error_message)
 
         return env_limits
@@ -649,26 +653,26 @@ class Controller:
 
         # check temp limits and warn if outside limits
         if self.env_limits['temp']['min'] >= self.TAvg:
-            error_message = "Average temperature below minimum! Average Temperature [C]: " + str(self.TAvg)
+            error_message = "Average temperature below minimum! Average Temperature [C]: " + str(round(self.TAvg, 2))
             self.log_env_issue(error_message)
         if self.env_limits['temp']['max'] <= self.TAvg:
-            error_message = "Average temperature above maximum! Average Temperature [C]: " + str(self.TAvg)
+            error_message = "Average temperature above maximum! Average Temperature [C]: " + str(round(self.TAvg, 2))
             self.log_env_issue(error_message)
 
         # check pressure limits and warn if outside limits
         if self.env_limits['press']['min'] >= self.PAvg:
-            error_message = "Average pressure below minimum! Average Pressure [Pa]: " + str(self.PAvg)
+            error_message = "Average pressure below minimum! Average Pressure [Pa]: " + str(round(self.PAvg, 2))
             self.log_env_issue(error_message)
         if self.env_limits['press']['max'] <= self.PAvg:
-            error_message = "Average pressure above maximum! Average Pressure [Pa]: " + str(self.PAvg)
+            error_message = "Average pressure above maximum! Average Pressure [Pa]: " + str(round(self.PAvg, 2))
             self.log_env_issue(error_message)
 
         # check humidity limits and warn if outside limits
         if self.env_limits['hum']['min'] >= self.HAvg:
-            error_message = "Average humidity below minimum! Average Humidity [%]: " + str(self.HAvg)
+            error_message = "Average humidity below minimum! Average Humidity [%]: " + str(round(self.HAvg, 2))
             self.log_env_issue(error_message)
         if self.env_limits['hum']['max'] <= self.HAvg:
-            error_message = "Average humidity above maximum! Average Humidity [%]: " + str(self.HAvg)
+            error_message = "Average humidity above maximum! Average Humidity [%]: " + str(round(self.HAvg, 2))
             self.log_env_issue(error_message)
 
         # STORAGE HEADER - timestamp, temp1, temp2, avg_temp, hum1, hum2, avg_hum, press1, press2, avg_press,
