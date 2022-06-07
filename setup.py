@@ -1,6 +1,6 @@
 from distutils.core import setup
 
-setup(name='ysr_monitor',
+setup(name='ysr_monitor_v2',
       version='0.1.5',
       packages=['src'],
       license='MIT',
